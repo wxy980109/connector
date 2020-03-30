@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 
-func Map2String(data map[string]interface{}) (string, error) {
+func Map2String(data interface{}) (string, error) {
 	str, err := json.Marshal(data)
 	if err != nil {
 		return "", err

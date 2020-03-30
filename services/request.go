@@ -17,8 +17,10 @@ var debugLog lib.DebugLogger
 var errorLog lib.ErrorLogger
 
 type GatewayData struct {
-	Data      map[string]interface{} `json:"data"`
-	CompanyId string                 `json:"companyId"`
+	Data      map[string]interface{}   `json:"data"`
+	DataList  []map[string]interface{} `json:"data"`
+	ErrCode   string                   `json:"errCode"`
+	CompanyId string                   `json:"companyId"`
 }
 
 //InitGateway InitGateway
@@ -30,35 +32,42 @@ func InitGateway() {
 	response, err := http.Get(url)
 	debugLog.Println("/manager/api/gateway response", response)
 	if err != nil || response.StatusCode != http.StatusOK {
-		errorLog.Println("get /manager/api/gateway result err !", url, err)
+		errorLog.Println("get manager err !", url, err)
 		return
 	}
 
 	//change body type to []byte
 	bytebody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		fmt.Printf("read body err, %v\n", err)
+		fmt.Printf("change response.Body type to []byte err, %v\n", err)
 		return
 	}
-	debugLog.Println("json:", string(bytebody))
 
 	//get json body into data
 	var data GatewayData
 	if err = json.Unmarshal(bytebody, &data); err != nil {
-		errorLog.Println("Unmarshal err, %v\n", err)
+		errorLog.Println("Unmarshal err:", err)
 		return
 	}
 
-	debugLog.Println("body is:", data)
-	debugLog.Println("body.companyId is:", data.CompanyId)
+	cID := data.DataList[0]["companyId"]
+	debugLog.Println("data.Data is:", data.DataList[0])
+	debugLog.Println("data.companyId is:", cID)
+	debugLog.Println("data.errCode is:", data.ErrCode)
 
-	dataString, err := utils.Map2String(data.Data)
+	dataString, err := utils.Map2String(data.DataList[0])
 	if err != nil {
 		errorLog.Println(err)
 		return
 	}
 
-	err = utils.WriteFile(data.CompanyId, []byte(dataString))
+	cIDString, err := utils.Map2String(cID)
+	if err != nil {
+		errorLog.Println(err)
+		return
+	}
+
+	err = utils.WriteFile(string(cIDString), []byte(dataString))
 	if err != nil {
 		errorLog.Println(err)
 		return
